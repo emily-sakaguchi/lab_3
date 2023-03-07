@@ -14,8 +14,6 @@ const map = new mapboxgl.Map({
     zoom: 10.5 // this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
 });
   
-
-
 /*--------------------------------------------------------------------
 ADDING MAPBOX CONTROLS AS ELEMENTS ON MAP
 --------------------------------------------------------------------*/
@@ -44,10 +42,9 @@ const geocoder = new MapboxGeocoder({
 document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
 
 
-
 /*--------------------------------------------------------------------
-CATEGORICAL NEIGHBOURHOOD INPROVEMENT AREA DATA
-Use get expression to categorise data based on population values
+CATEGORICAL MAP OF NEIGHBOURHOOD INPROVEMENT AREA DATA
+Colours assigned to categorical data
 --------------------------------------------------------------------*/
 // I used a tileset so that I could handle the large file size 
 map.on('load', () => {
@@ -72,12 +69,16 @@ map.on('load', () => {
         '#Ff6700', // neutral yellow
         '#949494' // grey in case of uncategorized values, but there should not be any
         ],
-        'fill-opacity': 0.8,
+        'fill-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            1,
+            0.5
+        ],
         'fill-outline-color': 'white'
       },
     'source-layer': 'Neighbourhoods-90ored' 
   });
-
 },
 );
 
@@ -94,6 +95,7 @@ map.addLayer({
   'paint': {
       'text-color': 'black'
   },
+
 });
 
 
@@ -114,10 +116,10 @@ const legendcolours = [
 ];
 
 
-// //Declare legend variable using legend div tag
+//Declare legend variable using legend div tag
 const legend = document.getElementById('legend');
 
-// //For each layer create a block to put the colour and label in
+//For each layer create a block to put the colour and label in
 legendlabels.forEach((label, i) => {
     const color = legendcolours[i];
 
@@ -137,20 +139,20 @@ legendlabels.forEach((label, i) => {
 });
 
 
-// /*--------------------------------------------------------------------
-// ADD INTERACTIVITY BASED ON HTML EVENT
-// --------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ADD INTERACTIVITY BASED ON HTML EVENT
+--------------------------------------------------------------------*/
 
-// //Add event listeneer which returns map view to full screen on button click
+//Add event listeneer which returns map view to full screen on button click
 document.getElementById('returnbutton').addEventListener('click', () => {
     map.flyTo({
-        center: [-105, 58],
-        zoom: 3,
+        center:[-79.371, 43.720],  //these cooraintes load Toronto at the centre of the map
+        zoom: 10.5, // this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
         essential: true
     });
 });
 
-// //Change display of legend based on check box
+//Change display of legend based on check box
 let legendcheck = document.getElementById('legendcheck');
 
 legendcheck.addEventListener('click', () => {
@@ -165,7 +167,7 @@ legendcheck.addEventListener('click', () => {
 });
 
 
-// //Change map layer display based on check box using setlayoutproperty
+//Change map layer display based on check box using setlayoutproperty
 document.getElementById('layercheck').addEventListener('change', (e) => {
     map.setLayoutProperty(
         'neighbourhoods-fill',
@@ -174,4 +176,57 @@ document.getElementById('layercheck').addEventListener('change', (e) => {
     );
 });
 
+/*--------------------------------------------------------------------
+POPUP EVENT
+--------------------------------------------------------------------*/
+map.on('mouseenter', 'neighbourhoods-fill', () => {
+    map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
+});
+
+map.on('mouseleave', 'neighbourhoods-fill', () => {
+    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves provterr-fill layer
+    map.setFilter("",['==', ['get', 'PRUID'], '']);
+});
+
+map.on('click', 'neihgbourhoods-fill', (e) => {
+    new mapboxgl.Popup() //Declare new popup object on each click
+        .setLngLat(e.lngLat) //Use method to set coordinates of popup based on mouse click location
+        .setHTML("<b>Neighbourhood Name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +
+            "Status: " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
+        .addTo(map); //Show popup on map
+})
+
+/*--------------------------------------------------------------------
+HOVER EVENT
+// --------------------------------------------------------------------*/
+let areaID = null; //Declare initial province ID as null
+
+map.on('mousemove', 'neighourhoods-fill', (e) => {
+    if (e.features.length > 0) { //If there are features in array enter conditional
+
+        if (areaID !== null) { //If provID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
+            map.setFeatureState(
+                { source: 'neighbourhoodsTO', id: areaID },
+                { hover: false }
+            );
+        }
+
+        areaID = e.features[0].id; //Update provID to featureID
+        map.setFeatureState(
+            { source: 'neighbourhoodsTO', id: areaID },
+            { hover: true } //Update hover feature state to TRUE to change opacity of layer to 1
+        );
+    }
+});
+
+
+map.on('mouseleave', 'neighourhoods-fill', () => { //If mouse leaves the geojson layer, set all hover states to false and provID variable back to null
+    if (areaID !== null) {
+        map.setFeatureState(
+            { source: 'neighbourhoodsTO', id: areaID },
+            { hover: false }
+        );
+    }
+    provID = null;
+});
 
