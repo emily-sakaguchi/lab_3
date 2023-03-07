@@ -2,18 +2,27 @@
 GGR472 Lab 3
 JavaScript
 --------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+GGR472 WEEK 7: JavaScript for Web Maps
+Adding elements to the map
+--------------------------------------------------------------------*/
 
-//My Mapbox access token
+//Define access token
 mapboxgl.accessToken = 'pk.eyJ1IjoiZW1pbHlzYWthZ3VjaGkiLCJhIjoiY2xkbTByeWl5MDF5YjNua2RmdWYyZ240ciJ9.l0mkQSD3VSua3-9301GQbA';
 
 //Initialize map
 const map = new mapboxgl.Map({
     container: 'map',
-    style:'mapbox://styles/emilysakaguchi/cle3eglbo000h01qi6soqwb00',
-    center:[-79.371, 43.720],  //these cooraintes load Toronto at the centre of the map
-    zoom: 10.5 // this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
+    style: 'mapbox://styles/emilysakaguchi/cle3eglbo000h01qi6soqwb00',
+    center: [-79.371, 43.720], //these cooraintes load Toronto at the centre of the map
+    zoom: 10.5, //this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
+    maxBounds: [
+        [-180, 30], // Southwest
+        [-25, 84]  // Northeast
+    ],
 });
-  
+
+
 /*--------------------------------------------------------------------
 ADDING MAPBOX CONTROLS AS ELEMENTS ON MAP
 --------------------------------------------------------------------*/
@@ -42,79 +51,59 @@ const geocoder = new MapboxGeocoder({
 document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
 
 
-/*--------------------------------------------------------------------
-CATEGORICAL MAP OF NEIGHBOURHOOD INPROVEMENT AREA DATA
-Colours assigned to categorical data
---------------------------------------------------------------------*/
-// I used a tileset so that I could handle the large file size 
-map.on('load', () => {
-  map.addSource('neighbourhoodsTO', { 
-    'type': 'vector', 
-    'url': 'mapbox://emilysakaguchi.bsiq2wyk' 
-  });
-  
-  map.addLayer({
-    'id': 'neighbourhoods-fill',
-    'type': 'fill',
-    'source': 'neighbourhoodsTO', 
-    'paint': {
-      'fill-color': [
-        'match',
-        ['get', 'CLASSIFICATION'],
-        'Not an NIA or Emerging Neighbourhood',
-        '#A3be25', // lime green
-        'Neighbourhood Improvement Area', 
-        '#F7d125', // soft red
-        'Emerging Neighbourhood',
-        '#Ff6700', // neutral yellow
-        '#949494' // grey in case of uncategorized values, but there should not be any
-        ],
-        'fill-opacity': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            1,
-            0.5
-        ],
-        'fill-outline-color': 'white'
-      },
-    'source-layer': 'Neighbourhoods-90ored' 
-  });
-},
-);
 
-map.addLayer({
-  'id': 'neighbourhood-labels',
-  'type': 'symbol',
-  'source': 'neighbourhoodsTO',
-  'layout': {
-      'text-field': ['get', 'AREA_NAME'],
-      'text-variable-anchor': ['bottom'],
-      'text-radial-offset': 0.5,
-      'text-justify': 'auto'
-  },
-  'paint': {
-      'text-color': 'black'
-  },
+/*--------------------------------------------------------------------
+ADD DATA AS CHOROPLETH MAP ON MAP LOAD
+Use get expression to categorise data based on population values
+--------------------------------------------------------------------*/
+//Add data source and draw initial visiualization of layer
+map.on('load', () => {
+    map.addSource('neighbourhoodsTO', {
+        'type': 'vector',
+        'url': 'mapbox://emilysakaguchi.bsiq2wyk' 
+    });
+
+    map.addLayer({
+        'id': 'neighbourhoods-fill',
+        'type': 'fill',
+        'source': 'neighbourhoodsTO',
+        'paint': {
+            'fill-color': [
+              'match',
+              ['get', 'CLASSIFICATION'],
+              'Not an NIA or Emerging Neighbourhood',
+              '#A3be25', // lime green
+              'Neighbourhood Improvement Area', 
+              '#F7d125', // soft red
+              'Emerging Neighbourhood',
+              '#Ff6700', // neutral yellow
+              '#949494' // grey in case of uncategorized values, but there should not be any
+              ],
+            'fill-opacity': 0.5,
+            'fill-outline-color': 'white'
+        },
+        'source-layer': 'Neighbourhoods-90ored'
+    });
 
 });
+
 
 
 /*--------------------------------------------------------------------
 CREATE LEGEND IN JAVASCRIPT
 --------------------------------------------------------------------*/
-// //Declare array variables for labels and colours
-const legendlabels = [
+//Declare arrayy variables for labels and colours
+var legendlabels = [
     'Not an NIA or Emerging Neighbourhood',
     'Neighbourhood Improvement Area', 
     'Emerging Neighbourhood'
 ];
 
-const legendcolours = [
+var legendcolours = [
     '#A3be25', // lime green for 'Not an NIA or Emerging Neighbourhood'
     '#F7d125', // soft red for 'Neighbourhood Improvement Area',
     '#Ff6700' // neutral yellow for 'Emerging Neighbourhood'
 ];
-
 
 //Declare legend variable using legend div tag
 const legend = document.getElementById('legend');
@@ -139,6 +128,7 @@ legendlabels.forEach((label, i) => {
 });
 
 
+
 /*--------------------------------------------------------------------
 ADD INTERACTIVITY BASED ON HTML EVENT
 --------------------------------------------------------------------*/
@@ -146,8 +136,8 @@ ADD INTERACTIVITY BASED ON HTML EVENT
 //Add event listeneer which returns map view to full screen on button click
 document.getElementById('returnbutton').addEventListener('click', () => {
     map.flyTo({
-        center:[-79.371, 43.720],  //these cooraintes load Toronto at the centre of the map
-        zoom: 10.5, // this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
+        center: [-105, 58],
+        zoom: 3,
         essential: true
     });
 });
@@ -175,58 +165,3 @@ document.getElementById('layercheck').addEventListener('change', (e) => {
         e.target.checked ? 'visible' : 'none'
     );
 });
-
-/*--------------------------------------------------------------------
-POPUP EVENT
---------------------------------------------------------------------*/
-map.on('mouseenter', 'neighbourhoods-fill', () => {
-    map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
-});
-
-map.on('mouseleave', 'neighbourhoods-fill', () => {
-    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves provterr-fill layer
-    map.setFilter("",['==', ['get', 'PRUID'], '']);
-});
-
-map.on('click', 'neihgbourhoods-fill', (e) => {
-    new mapboxgl.Popup() //Declare new popup object on each click
-        .setLngLat(e.lngLat) //Use method to set coordinates of popup based on mouse click location
-        .setHTML("<b>Neighbourhood Name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +
-            "Status: " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
-        .addTo(map); //Show popup on map
-})
-
-/*--------------------------------------------------------------------
-HOVER EVENT
-// --------------------------------------------------------------------*/
-let areaID = null; //Declare initial province ID as null
-
-map.on('mousemove', 'neighourhoods-fill', (e) => {
-    if (e.features.length > 0) { //If there are features in array enter conditional
-
-        if (areaID !== null) { //If provID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
-            map.setFeatureState(
-                { source: 'neighbourhoodsTO', id: areaID },
-                { hover: false }
-            );
-        }
-
-        areaID = e.features[0].id; //Update provID to featureID
-        map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: areaID },
-            { hover: true } //Update hover feature state to TRUE to change opacity of layer to 1
-        );
-    }
-});
-
-
-map.on('mouseleave', 'neighourhoods-fill', () => { //If mouse leaves the geojson layer, set all hover states to false and provID variable back to null
-    if (areaID !== null) {
-        map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: areaID },
-            { hover: false }
-        );
-    }
-    provID = null;
-});
-
