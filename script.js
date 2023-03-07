@@ -71,8 +71,8 @@ map.on('load', () => {
             'fill-color': [
               'match',
               ['get', 'CLASSIFICATION'],
-              'Not an NIA or Emerging Neighbourhood',
-              '#A3be25', // lime green
+              'Not a NIA or Emerging Neighbourhood',
+              '#96be25', // lime green
               'Neighbourhood Improvement Area', 
               '#F7d125', // soft red
               'Emerging Neighbourhood',
@@ -93,14 +93,14 @@ map.on('load', () => {
 CREATE LEGEND IN JAVASCRIPT
 --------------------------------------------------------------------*/
 //Declare arrayy variables for labels and colours
-var legendlabels = [
+var legendlabels = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
     'Not an NIA or Emerging Neighbourhood',
     'Neighbourhood Improvement Area', 
     'Emerging Neighbourhood'
 ];
 
-var legendcolours = [
-    '#A3be25', // lime green for 'Not an NIA or Emerging Neighbourhood'
+var legendcolours = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
+    '#96be25', // lime green for 'Not an NIA or Emerging Neighbourhood'
     '#F7d125', // soft red for 'Neighbourhood Improvement Area',
     '#Ff6700' // neutral yellow for 'Emerging Neighbourhood'
 ];
@@ -165,3 +165,25 @@ document.getElementById('layercheck').addEventListener('change', (e) => {
         e.target.checked ? 'visible' : 'none'
     );
 });
+
+/*--------------------------------------------------------------------
+ADD POP-UP ON CLICK EVENT
+--------------------------------------------------------------------*/
+map.on('mouseenter', 'neighbourhoods-fill', () => {
+    map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
+});
+
+map.on('mouseleave', 'neighnourhoods-fill', () => {
+    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves provterr-fill layer
+    //map.setFilter("provterr-hl",['==', ['get', 'PRUID'], '']);
+});
+
+
+map.on('click', 'neighbourhoods-fill', (e) => {
+    new mapboxgl.Popup() //Declare new popup object on each click
+        .setLngLat(e.lngLat) //Use method to set coordinates of popup based on mouse click location
+        .setHTML("<b>Neighbourhood name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +
+            "Improvment status: " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
+        .addTo(map); //Show popup on map
+})
+
