@@ -71,8 +71,8 @@ map.on('load', () => {
             'fill-color': [
               'match',
               ['get', 'CLASSIFICATION'],
-              'Not a NIA or Emerging Neighbourhood',
-              '#96be25', // lime green
+              'Not an NIA or Emerging Neighbourhood',
+              '#a9e075', // soft green
               'Neighbourhood Improvement Area', 
               '#F7d125', // soft red
               'Emerging Neighbourhood',
@@ -92,15 +92,25 @@ map.on('load', () => {
     /*--------------------------------------------------------------------
     LOADING GEOJSON FROM GITHUB
     --------------------------------------------------------------------*/
-    map.addSource('cafesjson'),{
+    map.addSource('cafesjson',{
     'type': 'geojson',
-    'data':
+    'data': 'https://raw.githubusercontent.com/emily-sakaguchi/lab_3/main/Cafe%20TO%20Locations.geojson'
+    })
 
-
+    map.addLayer({
+        'id': 'cafe-parklets',
+        'type':'circle',
+        'source': 'cafesjson',
+        'paint': {
+            'circle-radius': 2.5, // add steps
+            'circle-color':'blue'
+        }
+    });
+});
 //let cafejson;
 //fetch()
 
-});
+
 
 
 
@@ -117,7 +127,7 @@ var legendlabels = [ //I use var rather than const here to provide myself with f
 ];
 
 var legendcolours = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
-    '#96be25', // lime green for 'Not an NIA or Emerging Neighbourhood'
+    '#a9e075', // lime green for 'Not an NIA or Emerging Neighbourhood'
     '#F7d125', // soft red for 'Neighbourhood Improvement Area',
     '#Ff6700' // neutral yellow for 'Emerging Neighbourhood'
 ];
@@ -190,8 +200,8 @@ map.on('mouseenter', 'neighbourhoods-fill', () => {
     map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
 });
 
-map.on('mouseleave', 'neighnourhoods-fill', () => {
-    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves provterr-fill layer
+map.on('mouseleave', 'neighbourhoods-fill', () => {
+    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves neighbourhood-fill layer
     //map.setFilter("provterr-hl",['==', ['get', 'PRUID'], '']);
 });
 
@@ -207,21 +217,21 @@ map.on('click', 'neighbourhoods-fill', (e) => {
 /*--------------------------------------------------------------------
 HOVER EVENT
 // --------------------------------------------------------------------*/
-let provID = null; //Declsre initial province ID as null
+let areaID = null; //Declare initial province ID as null
 
 map.on('mousemove', 'neighbourhoods-fill', (e) => {
     if (e.features.length > 0) { //If there are features in array enter conditional
 
-        if (provID !== null) { //If provID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
+        if (areaID !== null) { //If areaID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
             map.setFeatureState(
-                { source: 'neighbourhoodsTO', id: provID },
+                { source: 'neighbourhoodsTO', id: areaID },
                 { hover: false }
             );
         }
 
         provID = e.features[0].id; //Update provID to featureID
         map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: provID },
+            { source: 'neighbourhoodsTO', id: areaID },
             { hover: true } //Update hover feature state to TRUE to change opacity of layer to 1
         );
     }
@@ -229,11 +239,11 @@ map.on('mousemove', 'neighbourhoods-fill', (e) => {
 
 
 map.on('mouseleave', 'neighbourhoods-fill', () => { //If mouse leaves the geojson layer, set all hover states to false and provID variable back to null
-    if (provID !== null) {
+    if (areaID !== null) {
         map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: provID },
+            { source: 'neighbourhoodsTO', id: areaID },
             { hover: false }
         );
     }
-    provID = null;
+    areaID = null;
 });
