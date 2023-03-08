@@ -79,13 +79,30 @@ map.on('load', () => {
               '#Ff6700', // neutral yellow
               '#949494' // grey in case of uncategorized values, but there should not be any
               ],
-            'fill-opacity': 0.5,
+            'fill-opacity': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false],
+                1,
+                0.7
+            ], //CASE and FEATURE STATE expression sets opactity as 0.7 when hover state is false and 1 when updated to true
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored'
     });
+    /*--------------------------------------------------------------------
+    LOADING GEOJSON FROM GITHUB
+    --------------------------------------------------------------------*/
+    map.addSource('cafesjson'),{
+    'type': 'geojson',
+    'data':
+
+
+//let cafejson;
+//fetch()
 
 });
+
+
 
 
 
@@ -136,8 +153,8 @@ ADD INTERACTIVITY BASED ON HTML EVENT
 //Add event listeneer which returns map view to full screen on button click
 document.getElementById('returnbutton').addEventListener('click', () => {
     map.flyTo({
-        center: [-105, 58],
-        zoom: 3,
+        center: [-79.371, 43.720],
+        zoom: 10.5,
         essential: true
     });
 });
@@ -183,7 +200,40 @@ map.on('click', 'neighbourhoods-fill', (e) => {
     new mapboxgl.Popup() //Declare new popup object on each click
         .setLngLat(e.lngLat) //Use method to set coordinates of popup based on mouse click location
         .setHTML("<b>Neighbourhood name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +
-            "Improvment status: " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
+            "<b>Improvment status:</b> " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
         .addTo(map); //Show popup on map
 })
 
+/*--------------------------------------------------------------------
+HOVER EVENT
+// --------------------------------------------------------------------*/
+let provID = null; //Declsre initial province ID as null
+
+map.on('mousemove', 'neighbourhoods-fill', (e) => {
+    if (e.features.length > 0) { //If there are features in array enter conditional
+
+        if (provID !== null) { //If provID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
+            map.setFeatureState(
+                { source: 'neighbourhoodsTO', id: provID },
+                { hover: false }
+            );
+        }
+
+        provID = e.features[0].id; //Update provID to featureID
+        map.setFeatureState(
+            { source: 'neighbourhoodsTO', id: provID },
+            { hover: true } //Update hover feature state to TRUE to change opacity of layer to 1
+        );
+    }
+});
+
+
+map.on('mouseleave', 'neighbourhoods-fill', () => { //If mouse leaves the geojson layer, set all hover states to false and provID variable back to null
+    if (provID !== null) {
+        map.setFeatureState(
+            { source: 'neighbourhoodsTO', id: provID },
+            { hover: false }
+        );
+    }
+    provID = null;
+});
