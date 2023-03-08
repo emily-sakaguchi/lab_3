@@ -78,7 +78,10 @@ map.on('load', () => {
         },
         'source-layer': 'Neighbourhoods-90ored'
     });
-    
+    /*--------------------------------------------------------------------
+    HOVER EVENT
+    --------------------------------------------------------------------*/
+
     var hoveredStateId =  null;
 
     map.on('mousemove', 'neighbourhoods-fill', function(e) {
@@ -122,7 +125,7 @@ map.on('load', () => {
 /*--------------------------------------------------------------------
 LEGEND
 --------------------------------------------------------------------*/
-//Declare arrayy variables for labels and colours
+//Declare array variables for labels and colours
 var legendlabels = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
     'Not an NIA or Emerging Neighbourhood',
     'Neighbourhood Improvement Area', 
@@ -137,32 +140,32 @@ var legendcolours = [ //I use var rather than const here to provide myself with 
     'blue' // curb lane/parklet café
 ];
 
-//Declare legend variable using legend div tag
+//legend variable that corresponds to legend div tag in html
 const legend = document.getElementById('legend');
 
-//For each layer create a block to put the colour and label in
+//Creates a legend block containing colours and labels
 legendlabels.forEach((label, i) => {
     const color = legendcolours[i];
 
-    const item = document.createElement('div'); //each layer gets a 'row' - this isn't in the legend yet, we do this later
-    const key = document.createElement('span'); //add a 'key' to the row. A key will be the color circle
+    const item = document.createElement('div'); //creates the rows
+    const key = document.createElement('span'); //adds a key (circle of colour) to the row
 
-    key.className = 'legend-key'; //the key will take on the shape and style properties defined in css
-    key.style.backgroundColor = color; // the background color is retreived from teh layers array
+    key.className = 'legend-key'; //style proprties assigned in style.css
+    key.style.backgroundColor = color; //the color is assigned in the layers array
 
     const value = document.createElement('span'); //add a value variable to the 'row' in the legend
     value.innerHTML = `${label}`; //give the value variable text based on the label
 
-    item.appendChild(key); //add the key (color cirlce) to the legend row
-    item.appendChild(value); //add the value to the legend row
+    item.appendChild(key); //appends the key  to the legend row
+    item.appendChild(value); //appends the value to the legend row
 
-    legend.appendChild(item); //add row to the legend
+    legend.appendChild(item); //appends each row to the legend
 });
 
 
-
 /*--------------------------------------------------------------------
-ADD INTERACTIVITY BASED ON HTML EVENT
+INTERACTIVITY
+- check boxes and buttons
 --------------------------------------------------------------------*/
 
 //event listener to return map view to full screen on button click
@@ -219,8 +222,3 @@ map.on('click', 'neighbourhoods-fill', (e) => {
             "<b>Improvment status:</b> " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
         .addTo(map); //Show popup on map
 })
-
-/*--------------------------------------------------------------------
-HOVER EVENT
-// --------------------------------------------------------------------*/
-
