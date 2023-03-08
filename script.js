@@ -2,10 +2,7 @@
 GGR472 Lab 3
 JavaScript
 --------------------------------------------------------------------*/
-/*--------------------------------------------------------------------
-GGR472 WEEK 7: JavaScript for Web Maps
-Adding elements to the map
---------------------------------------------------------------------*/
+
 
 //Define access token
 mapboxgl.accessToken = 'pk.eyJ1IjoiZW1pbHlzYWthZ3VjaGkiLCJhIjoiY2xkbTByeWl5MDF5YjNua2RmdWYyZ240ciJ9.l0mkQSD3VSua3-9301GQbA';
@@ -13,7 +10,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZW1pbHlzYWthZ3VjaGkiLCJhIjoiY2xkbTByeWl5MDF5Y
 //Initialize map
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/emilysakaguchi/cle3eglbo000h01qi6soqwb00',
+    style: 'mapbox://styles/emilysakaguchi/clexsrdwn000901nllrb8b6wy',
     center: [-79.371, 43.720], //these cooraintes load Toronto at the centre of the map
     zoom: 10.5, //this zooms to show all of Toronto, so users can explore by zooming in to areas of interest
     maxBounds: [
@@ -21,7 +18,6 @@ const map = new mapboxgl.Map({
         [-25, 84]  // Northeast
     ],
 });
-
 
 /*--------------------------------------------------------------------
 ADDING MAPBOX CONTROLS AS ELEMENTS ON MAP
@@ -33,14 +29,9 @@ map.addControl(new mapboxgl.NavigationControl());
 map.addControl(new mapboxgl.FullscreenControl());
 
 /*--------------------------------------------------------------------
-mapbox addControl method can also take position parameter 
-(e.g., 'top-left') to move from default top right position
-
-To place geocoder elsewhere on page (including outside of the map,
-create HTML div tag for geocoder and use css to position
+GEOCODER
 --------------------------------------------------------------------*/
 
-//Create geocoder variable
 const geocoder = new MapboxGeocoder({
     accessToken: mapboxgl.accessToken,
     mapboxgl: mapboxgl,
@@ -51,12 +42,10 @@ const geocoder = new MapboxGeocoder({
 document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
 
 
-
 /*--------------------------------------------------------------------
-ADD DATA AS CHOROPLETH MAP ON MAP LOAD
-Use get expression to categorise data based on population values
+DATA
 --------------------------------------------------------------------*/
-//Add data source and draw initial visiualization of layer
+//I use match to visualize the categorical data using different colours
 map.on('load', () => {
     map.addSource('neighbourhoodsTO', {
         'type': 'vector',
@@ -83,18 +72,39 @@ map.on('load', () => {
                 'case',
                 ['boolean', ['feature-state', 'hover'], false],
                 1,
-                0.7
+                0.5
             ], //CASE and FEATURE STATE expression sets opactity as 0.7 when hover state is false and 1 when updated to true
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored'
     });
+    
+    var hoveredStateId =  null;
+
+    map.on('mousemove', 'neighbourhoods-fill', function(e) {
+        if (e.features.length > 0) {
+            if (hoveredStateId) {
+                map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: false});
+            }
+            console.log(e.features[0].id)
+            hoveredStateId = e.features[0].id;
+            map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: true});
+        }
+    });
+
+    map.on('mouseleave', 'neighbourhoods-fill', function() {
+        if (hoveredStateId) {
+            map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId =  null;
+    });
+    
     /*--------------------------------------------------------------------
     LOADING GEOJSON FROM GITHUB
     --------------------------------------------------------------------*/
     map.addSource('cafesjson',{
     'type': 'geojson',
-    'data': 'https://raw.githubusercontent.com/emily-sakaguchi/lab_3/main/Cafe%20TO%20Locations.geojson'
+    'data': 'https://raw.githubusercontent.com/emily-sakaguchi/lab_3/main/CafeTO%20parklet.geojson'
     })
 
     map.addLayer({
@@ -102,34 +112,29 @@ map.on('load', () => {
         'type':'circle',
         'source': 'cafesjson',
         'paint': {
-            'circle-radius': 2.5, // add steps
+            'circle-radius':['interpolate', ['linear'], ['zoom'], 9, 1, 10.5, 2, 12, 3, 15, 5],
+            // the above code adjusts the size of points according to the zoom level
             'circle-color':'blue'
         }
     });
 });
-//let cafejson;
-//fetch()
-
-
-
-
-
-
 
 /*--------------------------------------------------------------------
-CREATE LEGEND IN JAVASCRIPT
+LEGEND
 --------------------------------------------------------------------*/
 //Declare arrayy variables for labels and colours
 var legendlabels = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
     'Not an NIA or Emerging Neighbourhood',
     'Neighbourhood Improvement Area', 
-    'Emerging Neighbourhood'
+    'Emerging Neighbourhood',
+    'Curb lane/parklet café'
 ];
 
 var legendcolours = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
     '#a9e075', // lime green for 'Not an NIA or Emerging Neighbourhood'
-    '#F7d125', // soft red for 'Neighbourhood Improvement Area',
-    '#Ff6700' // neutral yellow for 'Emerging Neighbourhood'
+    '#F7d125', // soft red for 'Neighbourhood Improvement Area'
+    '#Ff6700', // neutral yellow for 'Emerging Neighbourhood'
+    'blue' // curb lane/parklet café
 ];
 
 //Declare legend variable using legend div tag
@@ -160,7 +165,7 @@ legendlabels.forEach((label, i) => {
 ADD INTERACTIVITY BASED ON HTML EVENT
 --------------------------------------------------------------------*/
 
-//Add event listeneer which returns map view to full screen on button click
+//event listener to return map view to full screen on button click
 document.getElementById('returnbutton').addEventListener('click', () => {
     map.flyTo({
         center: [-79.371, 43.720],
@@ -169,7 +174,7 @@ document.getElementById('returnbutton').addEventListener('click', () => {
     });
 });
 
-//Change display of legend based on check box
+//Legend display (check box)
 let legendcheck = document.getElementById('legendcheck');
 
 legendcheck.addEventListener('click', () => {
@@ -183,8 +188,7 @@ legendcheck.addEventListener('click', () => {
     }
 });
 
-
-//Change map layer display based on check box using setlayoutproperty
+//Neighbourhood layer display (check box) using setlayoutproperty
 document.getElementById('layercheck').addEventListener('change', (e) => {
     map.setLayoutProperty(
         'neighbourhoods-fill',
@@ -194,7 +198,9 @@ document.getElementById('layercheck').addEventListener('change', (e) => {
 });
 
 /*--------------------------------------------------------------------
-ADD POP-UP ON CLICK EVENT
+POP-UP ON CLICK EVENT
+- When the cursor moves over the map, it changes from the default hand to a pointer
+- When the cursor clicks on a neighbourhood, the name and classification will appear in a pop-up
 --------------------------------------------------------------------*/
 map.on('mouseenter', 'neighbourhoods-fill', () => {
     map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
@@ -217,33 +223,4 @@ map.on('click', 'neighbourhoods-fill', (e) => {
 /*--------------------------------------------------------------------
 HOVER EVENT
 // --------------------------------------------------------------------*/
-let areaID = null; //Declare initial province ID as null
 
-map.on('mousemove', 'neighbourhoods-fill', (e) => {
-    if (e.features.length > 0) { //If there are features in array enter conditional
-
-        if (areaID !== null) { //If areaID IS NOT NULL set hover feature state back to false to remove opacity from previous highlighted polygon
-            map.setFeatureState(
-                { source: 'neighbourhoodsTO', id: areaID },
-                { hover: false }
-            );
-        }
-
-        provID = e.features[0].id; //Update provID to featureID
-        map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: areaID },
-            { hover: true } //Update hover feature state to TRUE to change opacity of layer to 1
-        );
-    }
-});
-
-
-map.on('mouseleave', 'neighbourhoods-fill', () => { //If mouse leaves the geojson layer, set all hover states to false and provID variable back to null
-    if (areaID !== null) {
-        map.setFeatureState(
-            { source: 'neighbourhoodsTO', id: areaID },
-            { hover: false }
-        );
-    }
-    areaID = null;
-});
