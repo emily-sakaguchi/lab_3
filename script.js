@@ -78,7 +78,7 @@ map.on('load', () => {
   
     //The same polygon layers of neighbouroods with different visualization (for the hover event)
     map.addLayer({
-        'id': 'neighbourhoods-opaque', //Update id to represent highlighted layer
+        'id': 'neighbourhoods-opaque', //Updated id to represent highlighted layer
         'type': 'fill',
         'source': 'neighbourhoodsTO',
         'paint': {
