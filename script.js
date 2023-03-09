@@ -70,7 +70,7 @@ map.on('load', () => {
               '#Ff6700', //neutral yellow
               'grey'
               ],
-            'fill-opacity': 0.5,
+            'fill-opacity': 0.5, //Opacity set to 50%
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored'
@@ -78,7 +78,7 @@ map.on('load', () => {
   
     //The same polygon layers of neighbouroods with different visualization (for the hover event)
     map.addLayer({
-        'id': 'neighbourhoods-opaque', //Updated id to represent highlighted layer
+        'id': 'neighbourhoods-opaque', //New ID for the highlighted layer
         'type': 'fill',
         'source': 'neighbourhoodsTO',
         'paint': {
@@ -93,7 +93,7 @@ map.on('load', () => {
                 '#Ff6700', //neutral yellow
                 'grey'
                 ],
-            'fill-opacity': 1, //Opacity set to 1
+            'fill-opacity': 1, //Opacity set to 100%
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored',
@@ -110,6 +110,10 @@ map.on('load', () => {
         if (e.features.length > 0) { //determines if there is a feature under the mouse
             map.setFilter('neighbourhoods-opaque', ['==', ['get', '_id'], e.features[0].properties._id]); //applies the filter set above
         }
+    });
+    
+    map.on('mouseleave', 'neighbourhoods-opaque', () => { //removes the highlight when the mouse moves away
+        map.setFilter("neighbourhoods-opaque",['==', ['get', '_id'], '']);
     });
 
     /*--------------------------------------------------------------------
