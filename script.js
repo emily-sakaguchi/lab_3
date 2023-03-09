@@ -22,30 +22,32 @@ const map = new mapboxgl.Map({
 /*--------------------------------------------------------------------
 ADDING MAPBOX CONTROLS AS ELEMENTS ON MAP
 --------------------------------------------------------------------*/
-//Add zoom and rotation controls to the map.
+//Adds buttons for zoom and rotation to the map.
 map.addControl(new mapboxgl.NavigationControl());
 
-//Add fullscreen option to the map
+//Adds a button to make the map fullscreen
 map.addControl(new mapboxgl.FullscreenControl());
 
 /*--------------------------------------------------------------------
 GEOCODER
+- this will allow users to search for locations and see them on the map
 --------------------------------------------------------------------*/
 
 const geocoder = new MapboxGeocoder({
     accessToken: mapboxgl.accessToken,
     mapboxgl: mapboxgl,
-    countries: "ca"
+    countries: "ca" //Location is set to Canada because the map is of Toronto, Canada
 });
 
-//Use geocoder div to position geocoder on page
-document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
-
+document.getElementById('geocoder').appendChild(geocoder.onAdd(map)); //adds geocoder to map
 
 /*--------------------------------------------------------------------
 DATA
+- The first data set is a tilset layer of neighbourhoods in Toronto
+- The tileset is convenient for the large size of the data (many attributes recorded for each)
+- I will be looking at neighbourhood improvement areas, a municipal designation that guides planning decisions
 --------------------------------------------------------------------*/
-//I use match to visualize the categorical data using different colours
+
 map.on('load', () => {
     map.addSource('neighbourhoodsTO', {
         'type': 'vector',
@@ -58,14 +60,15 @@ map.on('load', () => {
         'source': 'neighbourhoodsTO',
         'paint': {
             'fill-color': [
-              'match',
-              ['get', 'CLASSIFICATION'],
+              'match', //this allows for categorical colour values
+              ['get', 'CLASSIFICATION'], //Classification of neighbourhood status (improvement area, etc.) is the category of interest
               'Not an NIA or Emerging Neighbourhood',
-              '#a9e075', //soft green
+              '#99e600', //lime green
               'Neighbourhood Improvement Area', 
               '#F7d125', //soft red
               'Emerging Neighbourhood',
-              '#Ff6700' //neutral yellow
+              '#Ff6700', //neutral yellow
+              'grey'
               ],
             'fill-opacity': 0.5,
             'fill-outline-color': 'white'
@@ -80,44 +83,41 @@ map.on('load', () => {
         'source': 'neighbourhoodsTO',
         'paint': {
             'fill-color': [
-                'match',
+                'match', //this allows for categorical colour values
                 ['get', 'CLASSIFICATION'],
                 'Not an NIA or Emerging Neighbourhood',
-                '#a9e075', //soft green
+                '#99e600', //lime green
                 'Neighbourhood Improvement Area', 
                 '#F7d125', //soft red
                 'Emerging Neighbourhood',
-                '#Ff6700' //neutral yellow
+                '#Ff6700', //neutral yellow
+                'grey'
                 ],
             'fill-opacity': 1, //Opacity set to 1
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored',
-        'filter': ['==', ['get', '_id'], ''] //Set an initial filter to return nothing
+        'filter': ['==', ['get', '_id'], ''] //Initial filter (returns nothing)
     });
 
 
     /*--------------------------------------------------------------------
     HOVER EVENT
+    - if a neighbourhood polygon is under the mouse hover, it will turn opaque
     --------------------------------------------------------------------*/
 
     map.on('mousemove', 'neighbourhoods-fill', (e) => {
-        if (e.features.length > 0) { //if there are features in the event features array (i.e features under the mouse hover) then go into the conditional
-    
-            //set the filter of the provinces-hl to display the feature you're hovering over
-            //e.features[0] is the first feature in the array and properties.PRUID is the Province ID for that feature
-            map.setFilter('neighbourhoods-opaque', ['==', ['get', '_id'], e.features[0].properties._id]);
-    
+        if (e.features.length > 0) { //determines if there is a feature under the mouse
+            map.setFilter('neighbourhoods-opaque', ['==', ['get', '_id'], e.features[0].properties._id]); //applies the filter set above
         }
-     });
-    
-    
+    });
+
     /*--------------------------------------------------------------------
     LOADING GEOJSON FROM GITHUB
     --------------------------------------------------------------------*/
     map.addSource('cafesjson',{
-    'type': 'geojson',
-    'data': 'https://raw.githubusercontent.com/emily-sakaguchi/lab_3/main/CafeTO%20parklet.geojson'
+    'type': 'geojson', //geojson format will allow me to execute future GIS analysis on this same data using Turf.js
+    'data': 'https://raw.githubusercontent.com/emily-sakaguchi/lab_3/main/CafeTO%20parklet.geojson' //link to the github raw data
     })
 
     map.addLayer({
@@ -144,7 +144,7 @@ var legendlabels = [ //I use var rather than const here to provide myself with f
 ];
 
 var legendcolours = [ //I use var rather than const here to provide myself with flexiblity as the legend changes
-    '#a9e075', // lime green for 'Not an NIA or Emerging Neighbourhood'
+    '#99e600', // lime green for 'Not an NIA or Emerging Neighbourhood'
     '#F7d125', // soft red for 'Neighbourhood Improvement Area'
     '#Ff6700', // neutral yellow for 'Emerging Neighbourhood'
     'blue' // curb lane/parklet café
@@ -163,10 +163,10 @@ legendlabels.forEach((label, i) => {
     key.className = 'legend-key'; //style proprties assigned in style.css
     key.style.backgroundColor = color; //the color is assigned in the layers array
 
-    const value = document.createElement('span'); //add a value variable to the 'row' in the legend
-    value.innerHTML = `${label}`; //give the value variable text based on the label
+    const value = document.createElement('span'); //adds a value to each row 
+    value.innerHTML = `${label}`; //adds a text label to the value 
 
-    item.appendChild(key); //appends the key  to the legend row
+    item.appendChild(key); //appends the key to the legend row
     item.appendChild(value); //appends the value to the legend row
 
     legend.appendChild(item); //appends each row to the legend
@@ -192,19 +192,27 @@ let legendcheck = document.getElementById('legendcheck');
 
 legendcheck.addEventListener('click', () => {
     if (legendcheck.checked) {
-        legendcheck.checked = true;
+        legendcheck.checked = true; //when checked (true), the legend block is visible
         legend.style.display = 'block';
     }
     else {
-        legend.style.display = "none";
-        legendcheck.checked = false;
+        legend.style.display = "none"; 
+        legendcheck.checked = false; //when unchecked (false), the legend block is not displayed
     }
 });
 
-//Neighbourhood layer display (check box) using setlayoutproperty
+//Neighbourhood layer display (check box)
 document.getElementById('layercheck').addEventListener('change', (e) => {
     map.setLayoutProperty(
         'neighbourhoods-fill',
+        'visibility',
+        e.target.checked ? 'visible' : 'none'
+    );
+});
+//this ensures that unchecking the neighbourhoods layer will remove all polygons, even if one is highlighted
+document.getElementById('layercheck').addEventListener('change', (e) => {
+    map.setLayoutProperty(
+        'neighbourhoods-opaque',
         'visibility',
         e.target.checked ? 'visible' : 'none'
     );
@@ -216,19 +224,19 @@ POP-UP ON CLICK EVENT
 - When the cursor clicks on a neighbourhood, the name and classification will appear in a pop-up
 --------------------------------------------------------------------*/
 map.on('mouseenter', 'neighbourhoods-fill', () => {
-    map.getCanvas().style.cursor = 'pointer'; //Switch cursor to pointer when mouse is over provterr-fill layer
+    map.getCanvas().style.cursor = 'pointer'; //Switches cursor to pointer when mouse is over provterr-fill layer
 });
 
 map.on('mouseleave', 'neighbourhoods-fill', () => {
-    map.getCanvas().style.cursor = ''; //Switch cursor back when mouse leaves neighbourhood-fill layer
-    //map.setFilter("provterr-hl",['==', ['get', 'PRUID'], '']);
+    map.getCanvas().style.cursor = ''; //Switches cursor back when mouse leaves neighbourhood-fill layer
 });
 
 
 map.on('click', 'neighbourhoods-fill', (e) => {
-    new mapboxgl.Popup() //Declare new popup object on each click
-        .setLngLat(e.lngLat) //Use method to set coordinates of popup based on mouse click location
-        .setHTML("<b>Neighbourhood name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +
-            "<b>Improvment status:</b> " + e.features[0].properties.CLASSIFICATION) //Use click event properties to write text for popup
-        .addTo(map); //Show popup on map
+    new mapboxgl.Popup() //Declares a new popup on each click
+        .setLngLat(e.lngLat) //Coordinates of the mouse click to determine the coordinates of the pop-up
+        //Text for the pop-up:
+        .setHTML("<b>Neighbourhood name:</b> " + e.features[0].properties.AREA_NAME + "<br>" +// shows neighbourhood name
+            "<b>Improvment status:</b> " + e.features[0].properties.CLASSIFICATION) //shows neighbourhood improvement status
+        .addTo(map); //Adds the popup to the map
 })
