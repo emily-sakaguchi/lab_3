@@ -93,7 +93,7 @@ map.on('load', () => {
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored',
-        'filter': ['==', ['get', '_id'], ''] 
+        'filter': ['==', ['get', '_id'], ''] //Set an initial filter to return nothing
     });
 
 
@@ -102,11 +102,15 @@ map.on('load', () => {
     --------------------------------------------------------------------*/
 
     map.on('mousemove', 'neighbourhoods-fill', (e) => {
-        if (e.features.length > 0) { 
-            //features under the mouse will become opaque if condition is met
+        if (e.features.length > 0) { //if there are features in the event features array (i.e features under the mouse hover) then go into the conditional
+    
+            //set the filter of the provinces-hl to display the feature you're hovering over
+            //e.features[0] is the first feature in the array and properties.PRUID is the Province ID for that feature
             map.setFilter('neighbourhoods-opaque', ['==', ['get', '_id'], e.features[0].properties._id]);
+    
         }
      });
+    
     
     /*--------------------------------------------------------------------
     LOADING GEOJSON FROM GITHUB
