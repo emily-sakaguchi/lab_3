@@ -61,46 +61,52 @@ map.on('load', () => {
               'match',
               ['get', 'CLASSIFICATION'],
               'Not an NIA or Emerging Neighbourhood',
-              '#a9e075', // soft green
+              '#a9e075', //soft green
               'Neighbourhood Improvement Area', 
-              '#F7d125', // soft red
+              '#F7d125', //soft red
               'Emerging Neighbourhood',
-              '#Ff6700', // neutral yellow
-              '#949494' // grey in case of uncategorized values, but there should not be any
+              '#Ff6700' //neutral yellow
               ],
-            'fill-opacity': [
-                'case',
-                ['boolean', ['feature-state', 'hover'], false],
-                1,
-                0.5
-            ], //CASE and FEATURE STATE expression sets opactity as 0.7 when hover state is false and 1 when updated to true
+            'fill-opacity': 0.5,
             'fill-outline-color': 'white'
         },
         'source-layer': 'Neighbourhoods-90ored'
     });
+  
+    //The same polygon layers of neighbouroods with different visualization (for the hover event)
+    map.addLayer({
+        'id': 'neighbourhoods-opaque', //Update id to represent highlighted layer
+        'type': 'fill',
+        'source': 'neighbourhoodsTO',
+        'paint': {
+            'fill-color': [
+                'match',
+                ['get', 'CLASSIFICATION'],
+                'Not an NIA or Emerging Neighbourhood',
+                '#a9e075', //soft green
+                'Neighbourhood Improvement Area', 
+                '#F7d125', //soft red
+                'Emerging Neighbourhood',
+                '#Ff6700' //neutral yellow
+                ],
+            'fill-opacity': 1, //Opacity set to 1
+            'fill-outline-color': 'white'
+        },
+        'source-layer': 'Neighbourhoods-90ored',
+        'filter': ['==', ['get', '_id'], ''] 
+    });
+
+
     /*--------------------------------------------------------------------
     HOVER EVENT
     --------------------------------------------------------------------*/
 
-    var hoveredStateId =  null;
-
-    map.on('mousemove', 'neighbourhoods-fill', function(e) {
-        if (e.features.length > 0) {
-            if (hoveredStateId) {
-                map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: false});
-            }
-            console.log(e.features[0].id)
-            hoveredStateId = e.features[0].id;
-            map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: true});
+    map.on('mousemove', 'neighbourhoods-fill', (e) => {
+        if (e.features.length > 0) { 
+            //features under the mouse will become opaque if condition is met
+            map.setFilter('neighbourhoods-opaque', ['==', ['get', '_id'], e.features[0].properties._id]);
         }
-    });
-
-    map.on('mouseleave', 'neighbourhoods-fill', function() {
-        if (hoveredStateId) {
-            map.setFeatureState({source: 'neighbourhoodsTO', id: hoveredStateId}, { hover: false});
-        }
-        hoveredStateId =  null;
-    });
+     });
     
     /*--------------------------------------------------------------------
     LOADING GEOJSON FROM GITHUB
